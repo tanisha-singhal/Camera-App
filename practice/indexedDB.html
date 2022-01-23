@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input id="name" type="text" placeholder="DB name" value="DB">
+    <input type="number" id="version" placeholder="1.0" value="1">
+    <button id="create">Create</button>
+
+    <input id="note" type="text" placeholder="Your Note">
+    <button id="add">Add Note</button>
+</body>
+<script>
+    let name=document.querySelector("#name");
+    let version=document.querySelector("#version");
+    let btn=document.querySelector("#create");
+
+    let note=document.querySelector("#note");
+    let addBtn=document.querySelector("#add");
+
+   
+    let db,v,dbAccess;
+
+    addBtn.addEventListener("click",function(){
+       let val=note.value;
+       if(!dbAccess){
+           alert("please open a database first");
+           return;
+       }
+       let tx=dbAccess.transaction("cs","readwrite"); //transaction is a process which give access to read/write or upgrade the database.
+       let csObjectStore=tx.objectStore("cs");   //select object store from the transaction
+       let data={
+           nId:Date.now(),  // to uniquely identify an object.
+           noteValue:val,
+       }
+       csObjectStore.add(data);  //add data on the objectstore.
+    })
+
+    btn.addEventListener("click",function(){
+        db=name.value;
+        v=version.value;
+        let request=indexedDB.open(db,v);
+        // success event is called when you create or open a database
+        request.addEventListener("success",function(){
+            alert("db was created");
+            dbAccess=request.result;  //gives access to the database
+            viewNotes();
+        })
+        //upgradeneeded event is called when you create or change the version of a database.
+        request.addEventListener("upgradeneeded",function(){
+            alert("upgrade occured");
+            let db=request.result;
+            db.createObjectStore("cs",{keyPath:"nId"})  //to create a object store in a database
+        })
+        request.addEventListener("error",function(){
+            alert("An error occured");
+        })
+    })
+    function viewNotes(){
+        let tx=dbAccess.transaction("cs","readonly");
+        let csObjectStore=tx.objectStore("cs");
+        let req=csObjectStore.openCursor();
+        req.addEventListener("success",function(){
+            let cursor=req.result;
+            if(cursor){
+                console.log(cursor.value);
+                cursor.continue();
+            }
+        })
+    }
+</script>
+</html>
