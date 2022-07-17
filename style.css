@@ -105,7 +105,7 @@ video{
     position:fixed;
 }
 #gallery{
-    
+    background-color:white;
     position:fixed;
     bottom:7rem;
     right:2rem;
